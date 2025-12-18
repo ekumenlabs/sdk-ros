@@ -1,0 +1,34 @@
+# Instructions
+
+1. Build the Dockerfile. Inside this directory run:
+
+```
+docker build -t ros2-jazzy-colcon .
+```
+
+2. Run the container while mounting the sdk-ros directory
+
+```
+docker run -it --name ros2_jazzy_dev --rm \
+  -v PATH_TO_SDK_ROS:/workspace/src \
+  ros2-jazzy-colcon
+```
+
+3. Update apt and install dependencies
+
+```
+apt-get update
+rosdep install --from-paths src --ignore-src -r -y
+```
+
+4. Build
+
+```
+colcon build
+```
+
+5. **[Recommended]** If you want to persist changes to avoid having to re-install and compile everything, commit the Docker container. From another terminal in the host machine run:
+
+```
+docker commit ros2_jazzy_dev ros2-jazzy-colcon:latest
+```
