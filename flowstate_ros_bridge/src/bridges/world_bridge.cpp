@@ -29,6 +29,7 @@ namespace flowstate_ros_bridge {
 constexpr const char* kTfPrefixParamName = "world_tf_prefix";
 constexpr const char* kResourceServiceName = "flowstate_get_resource";
 constexpr const char* kMeshUrlPrefixParamName = "mesh_url_prefix";
+constexpr int kJointStatePublisherQoSDepth = 10;
 
 ///=============================================================================
 void WorldBridge::declare_ros_parameters(
@@ -106,6 +107,23 @@ bool WorldBridge::initialize(ROSNodeInterfaces ros_node_interfaces,
   }
   LOG(INFO) << "Subscribed to Flowstate TF topic";
   data_->tf_sub_ = std::move(*tf_sub_);
+
+  data_->robot_joint_states_pub_ =
+      rclcpp::create_publisher<sensor_msgs::msg::JointState>(
+          param_interface, topics_interface, "robot_joint_states",
+          rclcpp::QoS(rclcpp::KeepLast(kJointStatePublisherQoSDepth)));
+
+  auto robot_joint_states_sub_ = data_->world_->CreateRobotJointStatesSubscription(
+      [this](const intrinsic_proto::icon::JointState& msg) {
+        this->RobotJointStatesCallback(msg);
+      });
+  if (!robot_joint_states_sub_.ok()) {
+    LOG(ERROR) << "Unable to create RobotJointStates Subscription: "
+               << robot_joint_states_sub_.status();
+    return false;
+  }
+  LOG(INFO) << "Subscribed to Flowstate RobotJointStates topic";
+  data_->robot_joint_states_sub_ = std::move(*robot_joint_states_sub_);
 
   // Start a thread to publish sceneObject visualization messages whenever a new
   // object arrives
@@ -353,6 +371,18 @@ void WorldBridge::TfCallback(const intrinsic_proto::TFMessage& tf_proto) {
   }
 
   data_->tf_frame_names_ = std::move(new_tf_frame_names);
+}
+
+void WorldBridge::RobotJointStatesCallback(
+    const intrinsic_proto::icon::JointState& msg) {
+  auto ros_msg = std::make_unique<sensor_msgs::msg::JointState>();
+  ros_msg->header.stamp = rclcpp::Time(msg.timepoint_nsec());
+  // The intrinsic_proto::icon::JointState message does not contain joint names.
+  // We are leaving them empty here as the source message does not provide them.
+  ros_msg->position.assign(msg.position().begin(), msg.position().end());
+  ros_msg->velocity.assign(msg.velocity().begin(), msg.velocity().end());
+  ros_msg->effort.assign(msg.torque().begin(), msg.torque().end());
+  data_->robot_joint_states_pub_->publish(std::move(ros_msg));
 }
 
 WorldBridge::~WorldBridge() {

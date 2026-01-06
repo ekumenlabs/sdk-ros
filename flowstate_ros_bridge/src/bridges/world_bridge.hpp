@@ -28,6 +28,7 @@
 #include "flowstate_ros_bridge/bridge_interface.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 namespace flowstate_ros_bridge {
@@ -52,6 +53,7 @@ class WorldBridge : public BridgeInterface {
 
  private:
   void TfCallback(const intrinsic_proto::TFMessage&);
+  void RobotJointStatesCallback(const intrinsic_proto::icon::JointState&);
 
   struct Data : public std::enable_shared_from_this<Data> {
     /**
@@ -69,6 +71,8 @@ class WorldBridge : public BridgeInterface {
     std::shared_ptr<World> world_;
     std::shared_ptr<intrinsic::Subscription> tf_sub_;
     std::shared_ptr<rclcpp::Publisher<tf2_msgs::msg::TFMessage>> tf_pub_;
+    std::shared_ptr<intrinsic::Subscription> robot_joint_states_sub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>> robot_joint_states_pub_;
     std::shared_ptr<rclcpp::Publisher<visualization_msgs::msg::MarkerArray>>
         workcell_markers_pub_;
     std::string tf_prefix_;
