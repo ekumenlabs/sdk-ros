@@ -26,6 +26,7 @@
 #include "intrinsic/platform/pubsub/zenoh_publisher_data.h"
 #include "intrinsic/world/objects/object_world_client.h"
 #include "intrinsic/world/objects/world_object.h"
+#include "intrinsic/icon/proto/joint_space.pb.h"
 #include "intrinsic/world/proto/object_world_service.grpc.pb.h"
 
 namespace flowstate_ros_bridge {
@@ -44,6 +45,10 @@ class World : public std::enable_shared_from_this<World> {
 
   absl::StatusOr<std::shared_ptr<intrinsic::Subscription>> CreateTfSubscription(
       intrinsic::SubscriptionOkCallback<intrinsic_proto::TFMessage> callback);
+
+  absl::StatusOr<std::shared_ptr<intrinsic::Subscription>>
+  CreateRobotJointStatesSubscription(
+      intrinsic::SubscriptionOkCallback<intrinsic_proto::icon::JointState> callback);
 
   // Establish connections with various services.
   absl::Status connect();
