@@ -9,7 +9,7 @@ docker build -t ros2-jazzy-colcon .
 2. Run the container while mounting the sdk-ros directory
 
 ```
-docker run -it --name ros2_jazzy_dev --rm \
+docker run -it --name ros2_jazzy_dev --network host --rm \
   -v PATH_TO_SDK_ROS:/workspace/src \
   ros2-jazzy-colcon
 ```
