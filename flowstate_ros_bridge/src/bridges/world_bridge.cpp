@@ -140,7 +140,9 @@ bool WorldBridge::initialize(ROSNodeInterfaces ros_node_interfaces, std::shared_
   std::string robot_state_topic_name = param_interface->get_parameter(kRobotStatusTopicName).get_value<std::string>();
   LOG(INFO) << "Robot Status Topic Name: " << robot_state_topic_name;
   auto robot_state_sub = data_->world_->CreateRobotStateSubscription(
-      robot_state_topic_name, [this](const intrinsic_proto::icon::RobotStatus& msg) { this->RobotStateCallback(msg); });
+      robot_state_topic_name, [this](absl::string_view topic, const intrinsic_proto::icon::RobotStatus& msg) {
+        this->RobotStateCallback(topic, msg);
+      });
   if (!robot_state_sub.ok())
   {
     LOG(ERROR) << "Unable to create Robot State Subscription: " << robot_state_sub.status();
@@ -409,10 +411,13 @@ void WorldBridge::TfCallback(const intrinsic_proto::TFMessage& tf_proto) {
 }
 
 ///=============================================================================
-void WorldBridge::RobotStateCallback(const intrinsic_proto::icon::RobotStatus& robot_state_proto) {
+void WorldBridge::RobotStateCallback(absl::string_view topic,
+                                     const intrinsic_proto::icon::RobotStatus& robot_state_proto)
+{
   rclcpp::Clock clock;
   const rclcpp::Time t_start = clock.now();
 
+  LOG(INFO) << "Received RobotStatus on topic: " << topic;
   LOG(INFO) << "Received RobotStatus: " << robot_state_proto.DebugString();
   LOG(INFO) << "---------------------------------------------------------" << std::endl;
   for (const auto& entry : robot_state_proto.status_map()) {

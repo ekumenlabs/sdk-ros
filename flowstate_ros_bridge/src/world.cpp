@@ -50,11 +50,24 @@ World::CreateTfSubscription(
   return std::make_shared<intrinsic::Subscription>(std::move(*sub));
 }
 
-absl::StatusOr<std::shared_ptr<intrinsic::Subscription>>
-World::CreateRobotStateSubscription(const std::string& topic_name,
-                                    intrinsic::SubscriptionOkCallback<intrinsic_proto::icon::RobotStatus> callback) {
-  auto sub = pubsub_->CreateSubscription(topic_name, intrinsic::TopicConfig(),
-                                         callback);
+absl::StatusOr<std::shared_ptr<intrinsic::Subscription>> World::CreateRobotStateSubscription(
+    const std::string& topic_name,
+    std::function<void(absl::string_view, const intrinsic_proto::icon::RobotStatus&)> callback)
+{
+  auto sub = pubsub_->CreateSubscription(
+      topic_name, intrinsic::TopicConfig(),
+      [callback](absl::string_view topic, const intrinsic_proto::pubsub::PubSubPacket& packet) {
+        intrinsic_proto::icon::RobotStatus msg;
+        if (packet.payload().UnpackTo(&msg))
+        {
+          callback(topic, msg);
+        }
+        else
+        {
+          LOG(WARNING) << "Failed to unpack RobotStatus from topic: " << topic
+                       << ". Received type: " << packet.payload().type_url();
+        }
+      });
   if (!sub.ok()) {
     return sub.status();
   }
