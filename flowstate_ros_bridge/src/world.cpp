@@ -56,7 +56,7 @@ absl::StatusOr<std::shared_ptr<intrinsic::Subscription>> World::CreateRobotState
 {
   auto sub = pubsub_->CreateSubscription(
       topic_name, intrinsic::TopicConfig(),
-      [callback](absl::string_view topic, const intrinsic_proto::pubsub::PubSubPacket& packet) {
+      [callback, this](absl::string_view topic, const intrinsic_proto::pubsub::PubSubPacket& packet) {
         intrinsic_proto::icon::RobotStatus msg;
         if (packet.payload().UnpackTo(&msg))
         {
@@ -64,8 +64,11 @@ absl::StatusOr<std::shared_ptr<intrinsic::Subscription>> World::CreateRobotState
         }
         else
         {
-          LOG(WARNING) << "Failed to unpack RobotStatus from topic: " << topic
-                       << ". Received type: " << packet.payload().type_url();
+          topics_and_msg_types_[std::string(topic)] = packet.payload().type_url();
+          for (const auto& pair : topics_and_msg_types_)
+          {
+            LOG(WARNING) << "[" << pair.first << "] = " << pair.second;
+          }
         }
       });
   if (!sub.ok()) {

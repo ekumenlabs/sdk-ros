@@ -81,6 +81,7 @@ class World : public std::enable_shared_from_this<World> {
   bool connected_ = false;
   std::shared_ptr<intrinsic::world::ObjectWorldClient> object_world_client_;
   std::shared_ptr<GeometryService::Stub> geometry_stub_;
+  std::map<std::string, std::string> topics_and_msg_types_;
 };
 
 }  // namespace flowstate_ros_bridge.
